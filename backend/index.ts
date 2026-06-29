@@ -29,17 +29,31 @@ app.use(cors());
 
 app.post("/submission" ,async ( req, res ) =>{
     const { language, code } = req.body;
-     const id  = randomUUID();
-    await prisma.submission.create({
+    const submissionId =  randomUUID();
+    const { id } = await prisma.submission.create({
         data:{
-            submissionId : id,
+            submissionId,
             status:"PROCESSING",
 
         }
     })
-    return res.status(200).json({ message: " processing ", id:id });
+    await publisher.lPush("problem-queue", JSON.stringify({ language , code, id }));
+
+    return res.status(200).json({ message: " processing ", id });
 })
 
+
+app.get("/submission/:id",async ( req, res )=>{
+    const id = req.params.id;
+    const result = await prisma.submission.findFirst({
+        where:{
+            id: id
+        }
+    }) 
+    if( !result )
+        return res.status( 403 ).json({message:"Invalid id"})
+    return res.status( 200 ).json({ status : result.status});
+})
 
 
 app.get('/submission',( req, res )=>{
