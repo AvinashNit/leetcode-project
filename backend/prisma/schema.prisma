@@ -22,6 +22,6 @@ enum statusType {
 model Submission  {
     id     String @default( cuid() ) @unique
     status  statusType
-    submissionId  String 
+    submissionId  String
     result     String?
 }
