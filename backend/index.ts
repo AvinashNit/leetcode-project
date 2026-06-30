@@ -4,6 +4,8 @@ import { PrismaClient } from "./generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { randomBytes, randomUUID }from "crypto";
 import { createClient } from "redis";
+import path from "node:path";
+import { writeFile } from "node:fs/promises";
 
 const app =  express();
 
@@ -37,8 +39,9 @@ app.post("/submission" ,async ( req, res ) =>{
 
         }
     })
-    await publisher.lPush("problem-queue", JSON.stringify({ language , code, id }));
-
+    await publisher.lPush("problem-queue", JSON.stringify({ language , id }));
+    const jsPath =  path.resolve("../runner/js/main.js");
+    await  writeFile( jsPath , code ,"utf-8" );
     return res.status(200).json({ message: " processing ", id });
 })
 
@@ -52,7 +55,7 @@ app.get("/submission/:id",async ( req, res )=>{
     }) 
     if( !result )
         return res.status( 403 ).json({message:"Invalid id"})
-    return res.status( 200 ).json({ status : result.status});
+    return res.status( 200 ).json({ status : result.status , result: result.result});
 })
 
 
